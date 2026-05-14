@@ -29,7 +29,7 @@ class CrashApp : Application() {
                 getSharedPreferences("crash_prefs", Context.MODE_PRIVATE)
                     .edit()
                     .putString("last_crash", crashText)
-                    .apply()
+                    .commit() // must be synchronous — process dies immediately after
 
                 Log.e("CrashApp", "Uncaught exception captured", throwable)
             } catch (e: Exception) {

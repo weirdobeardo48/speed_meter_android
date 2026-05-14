@@ -8,26 +8,34 @@ data class SpeedSnapshot(
 )
 
 class SpeedMeter {
+    private val WINDOW_MS = 500L
+
     private var lastRx = TrafficStats.getTotalRxBytes()
     private var lastTx = TrafficStats.getTotalTxBytes()
-    private var lastTime = System.currentTimeMillis()
+    private var windowStart = System.currentTimeMillis()
+    private var lastSnapshot = SpeedSnapshot(0L, 0L)
 
     fun sample(): SpeedSnapshot {
         val nowRx = TrafficStats.getTotalRxBytes()
         val nowTx = TrafficStats.getTotalTxBytes()
         val now = System.currentTimeMillis()
-        val dt = max(1, now - lastTime)
+
+        // TrafficStats returns UNSUPPORTED on some devices/contexts
+        if (nowRx < 0 || nowTx < 0) return lastSnapshot
+
+        val dt = now - windowStart
+        // Wait for at least WINDOW_MS so the kernel has had time to flush counters
+        if (dt < WINDOW_MS) return lastSnapshot
 
         val dRx = (nowRx - lastRx).coerceAtLeast(0)
         val dTx = (nowTx - lastTx).coerceAtLeast(0)
 
         lastRx = nowRx
         lastTx = nowTx
-        lastTime = now
+        windowStart = now
 
-        val down = dRx * 1000L / dt
-        val up = dTx * 1000L / dt
-        return SpeedSnapshot(down, up)
+        lastSnapshot = SpeedSnapshot(dRx * 1000L / dt, dTx * 1000L / dt)
+        return lastSnapshot
     }
 
     companion object {

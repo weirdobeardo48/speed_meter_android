@@ -33,6 +33,15 @@ class MainActivity : AppCompatActivity() {
 
     private val batteryOptLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+                !pm.isIgnoringBatteryOptimizations(packageName)) {
+                Toast.makeText(
+                    this,
+                    "Battery optimization not disabled — overlay may stop unexpectedly",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
             startOverlayService() // continue anyway
         }
 

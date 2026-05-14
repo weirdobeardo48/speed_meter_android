@@ -19,10 +19,10 @@ fun getActiveNetType(context: Context): NetType {
     val caps = cm.getNetworkCapabilities(network) ?: return NetType.NONE
 
     return when {
+        caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN) -> NetType.VPN
         caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> NetType.WIFI
         caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> NetType.MOBILE
         caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> NetType.ETHERNET
-        caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN) -> NetType.VPN
         else -> NetType.OTHER
     }
 }
