@@ -10,6 +10,9 @@ import android.view.*
 import android.widget.TextView
 import androidx.core.app.NotificationCompat
 import com.truongnx.speedmeter.R
+import com.truongnx.speedmeter.core.IndicatorConfig
+import com.truongnx.speedmeter.core.IndicatorPrefs
+import com.truongnx.speedmeter.core.SpeedIndicator
 import com.truongnx.speedmeter.core.SpeedMeter
 import com.truongnx.speedmeter.core.getActiveNetType
 import kotlinx.coroutines.*
@@ -20,12 +23,31 @@ class OverlayService : Service() {
     private lateinit var params: WindowManager.LayoutParams
     private val screenSize = Point()
     private var rootView: View? = null
-    private var txt: TextView? = null
+    private var txtNet: TextView? = null
+    private var txtDown: TextView? = null
+    private var txtUp: TextView? = null
     private val speed = SpeedMeter()
 
     private val prefs by lazy {
-        getSharedPreferences("overlay_prefs", Context.MODE_PRIVATE)
+        getSharedPreferences(IndicatorPrefs.NAME, Context.MODE_PRIVATE)
     }
+
+    /**
+     * Cached so the render loop does a single field read instead of ~11 prefs lookups per
+     * tick. Refreshed by [prefsListener] whenever the settings screen saves, which keeps
+     * the existing "changes apply without restarting the service" behaviour.
+     */
+    @Volatile
+    private var config: IndicatorConfig = IndicatorPrefs.DEFAULT_CONFIG
+
+    // Must be a field: SharedPreferences only holds a weak reference to the listener.
+    private val prefsListener =
+        SharedPreferences.OnSharedPreferenceChangeListener { p, key ->
+            // The dragger writes pos_*_frac on every drag release; nothing to reload for those.
+            if (key == null || !key.startsWith("pos_")) {
+                config = IndicatorPrefs.load(p)
+            }
+        }
 
     private val rotationReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -36,6 +58,8 @@ class OverlayService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        config = IndicatorPrefs.load(prefs)
+        prefs.registerOnSharedPreferenceChangeListener(prefsListener)
         startInForeground()
         initOverlay()
         startLoop()
@@ -44,6 +68,7 @@ class OverlayService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        prefs.unregisterOnSharedPreferenceChangeListener(prefsListener)
         unregisterReceiver(rotationReceiver)
         scope.cancel()
         rootView?.let { wm.removeView(it) }
@@ -89,7 +114,9 @@ class OverlayService : Service() {
     private fun initOverlay() {
         wm = getSystemService(Context.WINDOW_SERVICE) as WindowManager
         val view = LayoutInflater.from(this).inflate(R.layout.overlay_speed, null)
-        txt = view.findViewById(R.id.txtSpeed)
+        txtNet = view.findViewById(R.id.txtNet)
+        txtDown = view.findViewById(R.id.txtDown)
+        txtUp = view.findViewById(R.id.txtUp)
 
         refreshScreenSize()
 
@@ -131,16 +158,30 @@ class OverlayService : Service() {
                 try {
                     val netType = getActiveNetType(this@OverlayService).label
                     val snap = speed.sample()
+                    // Snapshot the config so a mid-tick refresh can't paint a half-old frame.
+                    val cfg = config
+                    val downColor = SpeedIndicator.colorFor(snap.downBytesPerSec, cfg.down)
+                    val upColor = SpeedIndicator.colorFor(snap.upBytesPerSec, cfg.up)
                     withContext(Dispatchers.Main) {
-                        txt?.text = "$netType ${SpeedMeter.humanBytesPerSec(snap.downBytesPerSec)} ↓ " +
-                                "${SpeedMeter.humanBytesPerSec(snap.upBytesPerSec)} ↑"
+                        txtNet?.apply {
+                            text = netType
+                            setTextColor(cfg.netLabelColor)
+                        }
+                        txtDown?.apply {
+                            text = "${SpeedMeter.humanBytesPerSec(snap.downBytesPerSec)} ↓"
+                            setTextColor(downColor)
+                        }
+                        txtUp?.apply {
+                            text = "${SpeedMeter.humanBytesPerSec(snap.upBytesPerSec)} ↑"
+                            setTextColor(upColor)
+                        }
                     }
                 } catch (e: Exception) {
                     Log.e("OverlayService", "Loop error, retrying", e)
                     delay(2000)
                 }
 
-                val intervalMs = prefs.getLong("update_interval_ms", 1000L)
+                val intervalMs = prefs.getLong(IndicatorPrefs.KEY_INTERVAL, IndicatorPrefs.DEF_INTERVAL_MS)
                     .coerceIn(100L, 10000L)
                 delay(intervalMs)
             }

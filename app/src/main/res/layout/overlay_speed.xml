@@ -3,17 +3,42 @@
     android:id="@+id/root"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
     android:padding="6dp"
     android:background="#80323232"
     android:elevation="8dp">
 
+    <!-- Split into three views so download and upload can be tinted independently.
+         Keep these non-clickable: the drag listener lives on the root. -->
+
     <TextView
-        android:id="@+id/txtSpeed"
+        android:id="@+id/txtNet"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="0 KB/s ↓ 0 KB/s ↑"
+        android:text="W"
         android:textColor="#FFFFFF"
         android:textSize="8sp"
         android:typeface="normal" />
+
+    <TextView
+        android:id="@+id/txtDown"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:text="0 B/s ↓"
+        android:textColor="#FFFFFF"
+        android:textSize="8sp"
+        android:typeface="normal" />
+
+    <TextView
+        android:id="@+id/txtUp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:text="0 B/s ↑"
+        android:textColor="#FFFFFF"
+        android:textSize="8sp"
+        android:typeface="normal" />
+
 </LinearLayout>

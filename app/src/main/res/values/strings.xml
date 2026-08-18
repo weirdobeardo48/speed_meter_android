@@ -1,3 +1,35 @@
 <resources>
     <string name="app_name">Speed Meter</string>
+
+    <string name="title_settings">Indicator settings</string>
+    <string name="action_settings">Settings</string>
+    <string name="action_save">Save</string>
+    <string name="action_reset">Reset to defaults</string>
+
+    <string name="section_download">Download</string>
+    <string name="section_upload">Upload</string>
+    <string name="section_colors">Colors</string>
+
+    <string name="label_down_low">Low threshold (below this = problem)</string>
+    <string name="label_down_high">High threshold (above this = warning)</string>
+    <string name="label_up_low">Low threshold (below this = problem)</string>
+    <string name="label_up_high">High threshold (above this = warning)</string>
+
+    <string name="label_color_down_low">Download — below low</string>
+    <string name="label_color_down_normal">Download — normal</string>
+    <string name="label_color_down_high">Download — above high</string>
+    <string name="label_color_up_low">Upload — below low</string>
+    <string name="label_color_up_normal">Upload — normal</string>
+    <string name="label_color_up_high">Upload — above high</string>
+    <string name="label_color_net_label">Network type label</string>
+
+    <string name="hint_hex">#AARRGGBB</string>
+    <string name="hint_zero_disables">Set a threshold to 0 to disable that rule. An idle link reads 0 B/s, so a non-zero low threshold will show the low color when nothing is transferring.</string>
+
+    <string name="err_empty">Enter a number (0 disables this rule)</string>
+    <string name="err_bad_hex">Not a valid color, e.g. #FF5252</string>
+    <string name="err_low_ge_high">Low must be below high</string>
+    <string name="msg_saved">Saved</string>
+    <string name="msg_reset">Defaults loaded — press Save to apply</string>
+    <string name="confirm_reset">Reset all thresholds and colors to their defaults?</string>
 </resources>
